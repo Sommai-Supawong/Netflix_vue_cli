@@ -36,114 +36,246 @@
 </template>
 
 <script>
+import { useMoviesStore } from '@/stores/movies';
+import { mapState } from 'pinia';
 import MovieCard from '@/components/MovieCard.vue'
 
 export default {
-  name: 'Home',
+  name: 'HomePage',
   components: {
     MovieCard
   },
-  data() {
-    return {
-      featuredMovies: [
-        { id: 1, title: 'Action Hero', poster: 'https://via.placeholder.com/300x450', description: 'An action-packed adventure', rating: 8.5 },
-        { id: 2, title: 'Comedy Central', poster: 'https://via.placeholder.com/300x450', description: 'Hilarious comedy hits', rating: 7.8 },
-        { id: 3, title: 'Sci-Fi World', poster: 'https://via.placeholder.com/300x450', description: 'Mind-bending science fiction', rating: 9.0 },
-        { id: 4, title: 'Horror House', poster: 'https://via.placeholder.com/300x450', description: 'Scary and suspenseful', rating: 7.2 }
-      ],
-      trendingMovies: [
-        { id: 5, title: 'Drama Queen', poster: 'https://via.placeholder.com/300x450', description: 'Emotional drama series', rating: 8.9 },
-        { id: 6, title: 'Romance Story', poster: 'https://via.placeholder.com/300x450', description: 'Heartwarming romantic tale', rating: 8.1 },
-        { id: 7, title: 'Documentary Zone', poster: 'https://via.placeholder.com/300x450', description: 'Educational and inspiring', rating: 9.2 },
-        { id: 8, title: 'Animation Land', poster: 'https://via.placeholder.com/300x450', description: 'Colorful animated adventures', rating: 8.7 }
-      ]
+  computed: {
+    ...mapState(useMoviesStore, ['list', 'loading']),
+    featuredMovies() {
+      // Return first 4 movies as featured
+      return this.list.slice(0, 4);
+    },
+    trendingMovies() {
+      // Return next 4 movies as trending
+      return this.list.slice(4, 8);
     }
   },
-  created() {
+  async created() {
     document.title = 'Netflix Clone - Home';
+    
+    // Initialize movies from localStorage
+    const moviesStore = useMoviesStore();
+    moviesStore.initializeMovies();
   }
 }
 </script>
 
 <style scoped>
 .home {
-  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
-               url('https://via.placeholder.com/1920x1080/1a1a1a/ffffff?text=Background+Image') no-repeat center center;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(20, 20, 20, 0.9) 100%), 
+               url('https://assets.nflxext.com/ffe/siteui/vlv3/9db4a880-3034-4e90-bf5d-7c3e43e2f8a9/3c8bf3c6-2a0d-4605-97b1-648e1ae6c53c/TH-en-20251003-popsignuptwoweeks-perspective_alpha_website_large.jpg') no-repeat center center;
   background-size: cover;
   min-height: 100vh;
-  padding-bottom: 40px;
+  padding-bottom: 2.5rem;
+  position: relative;
+}
+
+.home::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, rgba(229, 9, 20, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+  z-index: -1;
 }
 
 .hero {
-  padding: 100px 20px 40px;
+  padding: 8rem 1.25rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(229, 9, 20, 0.1) 0%, transparent 70%);
+  z-index: -1;
 }
 
 .hero-content {
-  max-width: 800px;
+  max-width: 65rem;
   margin: 0 auto;
   text-align: center;
   color: white;
+  z-index: 2;
+  position: relative;
 }
 
 .hero h1 {
-  font-size: 3.5rem;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  font-size: 4.5rem;
+  margin-bottom: 1rem;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+  background: linear-gradient(to right, #e50914, #ff4757);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+  font-weight: 800;
 }
 
 .hero p {
-  font-size: 1.5rem;
-  margin-bottom: 30px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  font-size: 1.75rem;
+  margin-bottom: 2.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  color: #f5f5f5;
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .hero-buttons {
   display: flex;
   justify-content: center;
-  gap: 15px;
-  margin-top: 30px;
+  gap: 1.25rem;
+  margin-top: 2.5rem;
 }
 
 .btn {
-  padding: 12px 24px;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
+  padding: 0.9rem 2rem;
+  border-radius: 3rem;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
 .btn:hover {
-  opacity: 0.8;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
 .btn-primary {
-  background-color: #e50914;
+  background: linear-gradient(145deg, #e50914, #b20710);
   color: white;
-  border: none;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(145deg, #b20710, #e50914);
 }
 
 .btn-secondary {
-  background-color: rgba(109, 109, 110, 0.7);
+  background: linear-gradient(145deg, rgba(109, 109, 110, 0.8), rgba(50, 50, 50, 0.8));
   color: white;
-  border: none;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(145deg, rgba(50, 50, 50, 0.9), rgba(109, 109, 110, 0.9));
 }
 
 section {
-  margin: 40px 0;
-  padding: 0 20px;
+  margin: 4rem 0;
+  padding: 0 1.25rem;
 }
 
 h2 {
   color: white;
-  font-size: 1.8rem;
-  margin-bottom: 20px;
-  padding-left: 10px;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  padding-left: 0.625rem;
+  position: relative;
+  font-weight: 700;
+}
+
+h2::after {
+  content: '';
+  position: absolute;
+  bottom: -0.3rem;
+  left: 0;
+  width: 4rem;
+  height: 0.25rem;
+  background: linear-gradient(to right, #e50914, #ff4757);
+  border-radius: 0.25rem;
 }
 
 .movie-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+/* Animation for hero content */
+.hero-content {
+  animation: fadeInUp 1s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation for buttons */
+.hero-buttons .btn {
+  animation: btnPulse 2s infinite;
+}
+
+@keyframes btnPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Adjust animation on hover */
+.hero-buttons .btn:hover {
+  animation: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .hero {
+    padding: 6rem 1rem 2rem;
+  }
+  
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+  
+  .hero p {
+    font-size: 1.25rem;
+  }
+  
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .btn {
+    width: 100%;
+    max-width: 20rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  .movie-grid {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 1rem;
+  }
 }
 </style>

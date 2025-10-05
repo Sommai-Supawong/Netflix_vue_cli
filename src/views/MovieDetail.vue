@@ -1,13 +1,13 @@
 <template>
-  <div class="movie-detail">
-    <div class="hero" :style="{ backgroundImage: `url(${selectedMovie.background})` }">
+  <div class="movie-detail" v-if="selectedMovie">
+    <div class="hero" :style="{ backgroundImage: `url(${selectedMovie.background || 'https://via.placeholder.com/1920x1080/1a1a1a/ffffff?text=Background+Image'})` }">
       <div class="hero-overlay"></div>
       <div class="hero-content">
         <h1>{{ selectedMovie.title }}</h1>
         <div class="movie-meta">
           <span class="rating">★ {{ selectedMovie.rating }}</span>
-          <span class="year">{{ selectedMovie.year }}</span>
-          <span class="duration">{{ selectedMovie.duration }}</span>
+          <span class="year">{{ selectedMovie.year || 'N/A' }}</span>
+          <span class="duration">{{ selectedMovie.duration || 'N/A' }}</span>
         </div>
         <p class="description">{{ selectedMovie.description }}</p>
         <div class="action-buttons">
@@ -25,28 +25,43 @@
       <div class="container">
         <div class="cast">
           <h3>Cast</h3>
-          <p>{{ selectedMovie.cast.join(', ') }}</p>
+          <p>{{ selectedMovie.cast?.join(', ') || 'N/A' }}</p>
         </div>
         <div class="genre">
           <h3>Genre</h3>
-          <p>{{ selectedMovie.genre.join(', ') }}</p>
+          <p>{{ selectedMovie.genre?.join(', ') || 'N/A' }}</p>
         </div>
         <div class="director">
           <h3>Director</h3>
-          <p>{{ selectedMovie.director }}</p>
+          <p>{{ selectedMovie.director || 'N/A' }}</p>
         </div>
       </div>
     </div>
+    <CustomAlert ref="customAlert" />
+  </div>
+  <div v-else class="loading">
+    <p>Loading movie details...</p>
   </div>
 </template>
 
 <script>
+import { useMoviesStore } from '@/stores/movies';
+import { useUserFavoritesStore } from '@/stores/userFavorites';
+import { mapState } from 'pinia';
+
 export default {
   name: 'MovieDetail',
   data() {
     return {
-      selectedMovie: null,
       isInMyList: false
+    }
+  },
+  computed: {
+    ...mapState(useMoviesStore, ['list']),
+    selectedMovie() {
+      const movieId = parseInt(this.$route.params.id);
+      // Find the movie in the store by ID
+      return this.list.find(movie => movie.id === movieId);
     }
   },
   created() {
@@ -54,80 +69,53 @@ export default {
     this.checkMyList();
   },
   methods: {
+    showCustomAlert(message, type = 'info') {
+      this.$refs.customAlert.showAlert(message, type);
+    },
     fetchMovieDetails() {
-      // In a real app, this would fetch from an API
-      const movieId = parseInt(this.$route.params.id);
+      // Initialize movies from localStorage to ensure we have the latest data
+      const moviesStore = useMoviesStore();
       
-      // Mock data for movie details
-      const mockMovies = {
-        1: {
-          id: 1,
-          title: 'Action Hero',
-          description: 'An action-packed adventure featuring a hero who must save the world from an evil villain.',
-          year: 2023,
-          duration: '2h 15m',
-          rating: 8.5,
-          background: 'https://via.placeholder.com/1920x1080/1a1a1a/ffffff?text=Action+Hero+Background',
-          cast: ['Actor One', 'Actor Two', 'Actor Three'],
-          genre: ['Action', 'Adventure'],
-          director: 'Director Name'
-        },
-        2: {
-          id: 2,
-          title: 'Comedy Central',
-          description: 'A hilarious comedy that will have you laughing from start to finish.',
-          year: 2022,
-          duration: '1h 50m',
-          rating: 7.8,
-          background: 'https://via.placeholder.com/1920x1080/1a1a1a/ffffff?text=Comedy+Central+Background',
-          cast: ['Comedy Actor 1', 'Comedy Actor 2'],
-          genre: ['Comedy'],
-          director: 'Comedy Director'
-        },
-        3: {
-          id: 3,
-          title: 'Sci-Fi World',
-          description: 'A mind-bending science fiction journey to the future.',
-          year: 2024,
-          duration: '2h 28m',
-          rating: 9.0,
-          background: 'https://via.placeholder.com/1920x1080/1a1a1a/ffffff?text=Sci-Fi+World+Background',
-          cast: ['Sci-Fi Star 1', 'Sci-Fi Star 2', 'Sci-Fi Star 3'],
-          genre: ['Sci-Fi', 'Adventure'],
-          director: 'Sci-Fi Director'
-        },
-        4: {
-          id: 4,
-          title: 'Horror House',
-          description: 'A terrifying experience that will keep you on the edge of your seat.',
-          year: 2021,
-          duration: '1h 35m',
-          rating: 7.2,
-          background: 'https://via.placeholder.com/1920x1080/1a1a1a/ffffff?text=Horror+House+Background',
-          cast: ['Horror Actor 1', 'Horror Actor 2'],
-          genre: ['Horror', 'Thriller'],
-          director: 'Horror Director'
-        }
-      };
-
-      this.selectedMovie = mockMovies[movieId] || mockMovies[1];
-      document.title = `Netflix Clone - ${this.selectedMovie.title}`;
+      // Initialize movies from localStorage
+      moviesStore.initializeMovies();
     },
     playMovie() {
-      // In a real app, this would start the video player
-      console.log(`Playing ${this.selectedMovie.title}`);
-      // This would route to a player page in a real app
+      // Check if the movie has a video link
+      if (this.selectedMovie && this.selectedMovie.videoLink) {
+        // Open the video link in a new tab/window
+        window.open(this.selectedMovie.videoLink, '_blank');
+      } else {
+        // Fallback if no video link is available
+        this.showCustomAlert('ไม่พบลิงค์วิดีโอสำหรับหนังเรื่องนี้', 'warning');
+      }
     },
-    toggleMyList() {
-      // In a real app, this would add/remove from the user's list
-      this.isInMyList = !this.isInMyList;
-      const message = this.isInMyList ? 'added to' : 'removed from';
-      alert(`${this.selectedMovie.title} ${message} your list`);
+    async toggleMyList() {
+      if (!this.selectedMovie) return;
+      
+      const favoritesStore = useUserFavoritesStore();
+      try {
+        // Toggle the favorite status
+        this.isInMyList = await favoritesStore.toggleFavorite(this.selectedMovie.id.toString());
+        const message = this.isInMyList ? 'added to' : 'removed from';
+        this.showCustomAlert(`${this.selectedMovie.title} ${message} your list`, 'info');
+      } catch (error) {
+        this.showCustomAlert('Error updating your list', 'error');
+        console.error('Error toggling favorite:', error);
+      }
     },
     checkMyList() {
-      // Check if this movie is in the user's list
-      const myList = JSON.parse(localStorage.getItem('myList')) || [];
-      this.isInMyList = myList.includes(this.$route.params.id);
+      const favoritesStore = useUserFavoritesStore();
+      // Initialize if needed
+      if (favoritesStore.favoriteMovies.length === 0) {
+        favoritesStore.initializeFavorites();
+      }
+      this.isInMyList = favoritesStore.isFavorite(this.$route.params.id);
+    }
+  },
+  watch: {
+    // Watch for route changes to fetch new movie details if needed
+    '$route.params.id'() {
+      this.fetchMovieDetails();
     }
   }
 }
@@ -260,5 +248,14 @@ export default {
   .movie-info {
     padding: 30px 20px;
   }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: white;
+  font-size: 1.5rem;
 }
 </style>
